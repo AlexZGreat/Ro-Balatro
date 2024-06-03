@@ -651,7 +651,9 @@ SMODS.Consumable { --Slingshot
     end,
     can_use = function(self,card)
         if card.ability.extra.currentuses > 0 then
-            return true
+            if card.area ~= G.shop_jokers then
+                return true
+            end
         end
     end,
     use = function(self,card,area,copier)
@@ -754,7 +756,9 @@ SMODS.Consumable { --Boombox
     can_use = function(self,card)
         if card.ability.extra.currentuses > 0 then
             if G.shop_jokers then
-                return true
+                if card.area ~= G.shop_jokers then
+                    return true
+                end
             end
         end
     end,
