@@ -33,7 +33,7 @@ SMODS.Atlas {
 
 SMODS.ConsumableType { --Gear Consumable Type
     key = 'Gear',
-    collection_rows = { 4,4 },
+    collection_rows = { 5,5 },
     primary_colour = G.C.CHIPS,
     secondary_colour = G.C.MONEY,
     loc_txt = {
@@ -41,7 +41,7 @@ SMODS.ConsumableType { --Gear Consumable Type
         name = 'Gear',
         label = 'Gear'
     },
-    shop_rate = 10
+    shop_rate = 5
 }
 
 SMODS.Joker {  --Noob
@@ -339,7 +339,7 @@ SMODS.Joker { --Rthro
         'On blind select, all {C:attention}consumables{}',
         'in your consumable area are {C:attention}destroyed{}'}
     },
-    config = {extra = {xmult = 2}},
+    config = {extra = {xmult = 2, money = 8}},
     rarity = 2,
     pos = {x = 7,y = 0},
     atlas = 'jokeratlas',
@@ -362,6 +362,90 @@ SMODS.Joker { --Rthro
                     play_sound('generic1', 0.96+math.random()*0.08)
                 return true end }))
                 delay(0.5)
+            end
+        end
+        if context.joker_main then
+            return {
+                message = localize{type='variable',key='a_xmult',vars={card.ability.extra.xmult}},
+                Xmult_mod = card.ability.extra.xmult
+            }
+        end
+    end
+}
+
+SMODS.Joker { --Swordsman
+    key = 'swordsman',
+    loc_txt = {
+        name = 'Swordsman',
+        text = {'Gains {X:mult,C:white}X#2#{} Mult when',
+        '{C:attention}consumable{} is used, loses {X:mult,C:white}X#3#{}',
+        'Mult when {C:attention}shop is rerolled',
+        '{C:inactive}(Currently {X:mult,C:white}X#1#{C:inactive} Mult)'}
+    },
+    config = {extra = {xmult = 1, xmultgain = 0.1, xmultloss = 0.25}},
+    rarity = 3,
+    pos = {x = 7,y = 3},
+    atlas = 'jokeratlas',
+    cost = 5,
+    unlocked = true,
+    discovered = true,
+    blueprint_compat = true,
+    loc_vars = function(self, info_queue, card)
+        return {vars = {card.ability.extra.xmult,card.ability.extra.xmultgain,card.ability.extra.xmultloss}}
+    end,
+    calculate = function(self,card,context)
+        if context.using_consumeable and not context.blueprint then
+            card.ability.extra.xmult = card.ability.extra.xmult + card.ability.extra.xmultgain
+            G.E_MANAGER:add_event(Event({
+                func = function() card_eval_status_text(card, 'extra', nil, nil, nil, {message = localize('k_upgrade_ex')}); return true
+                end}))
+        end
+        if context.reroll_shop and not context.blueprint then
+            if card.ability.extra.xmult ~= 1 then
+                card.ability.extra.xmult = math.max(1,card.ability.extra.xmult - card.ability.extra.xmultloss)
+                G.E_MANAGER:add_event(Event({
+                    func = function() card_eval_status_text(card, 'extra', nil, nil, nil, {message = 'Downgrade :('}); return true
+                    end}))
+            end
+        end
+        if context.joker_main then
+            if card.ability.extra.xmult ~= 1 then
+                return {
+                    message = localize{type='variable',key='a_xmult',vars={card.ability.extra.xmult}},
+                    Xmult_mod = card.ability.extra.xmult
+                }
+            end
+        end
+    end
+}
+
+SMODS.Joker { --Adopt Me
+    key = 'adoptme',
+    loc_txt = {
+        name = 'Adopt Me',
+        text = {'{X:mult,C:white}X#1#{} Mult',
+        'Gives {C:money}$#2#{} at end of blind'}
+    },
+    config = {extra = {xmult = 0.5, money = 8}},
+    rarity = 2,
+    pos = {x = 7,y = 3},
+    atlas = 'jokeratlas',
+    cost = 5,
+    unlocked = true,
+    discovered = true,
+    blueprint_compat = true,
+    loc_vars = function(self, info_queue, card)
+        return {vars = {card.ability.extra.xmult, card.ability.extra.money}}
+    end,
+    calculate = function(self,card,context)
+        if context.end_of_round then
+            if not context.individual and not context.repetition then
+                ease_dollars(card.ability.extra.money)
+                return {
+                    message = localize('$')..card.ability.extra.money,
+                    colour = G.C.MONEY,
+                    card = card
+                }
             end
         end
         if context.joker_main then
@@ -430,7 +514,7 @@ SMODS.Consumable { --Sword
             else
                 G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.4, func = function()
                     attention_text({
-                        text = 'Miss!',
+                        text = 'Miss :(',
                         scale = 1.3, 
                         hold = 1.4,
                         major = card,
@@ -664,6 +748,7 @@ SMODS.Consumable { --Slingshot
         card.ability.extra.pokerhand = pseudorandom_element(_poker_hands, pseudoseed('slingshot'))
         update_hand_text({sound = 'button', volume = 0.7, pitch = 0.8, delay = 0.3}, {handname=localize(card.ability.extra.pokerhand, 'poker_hands'),chips = G.GAME.hands[card.ability.extra.pokerhand].chips, mult = G.GAME.hands[card.ability.extra.pokerhand].mult, level=G.GAME.hands[card.ability.extra.pokerhand].level})
         level_up_hand(card,card.ability.extra.pokerhand,false,3)
+        update_hand_text({sound = 'button', volume = 0.7, pitch = 1.1, delay = 0}, {mult = 0, chips = 0, handname = '', level = ''})
         card.ability.extra.currentuses = card.ability.extra.currentuses - 1
     end
 }
@@ -715,7 +800,7 @@ SMODS.Consumable { --Superball
                         return true
                     end
                 }))
-                play_sound('tarot2')
+                play_sound('gold_seal', 1.2, 0.4)
             else
                 v:set_ability(G.P_CENTERS.m_wild) 
                 G.E_MANAGER:add_event(Event({
@@ -735,18 +820,19 @@ SMODS.Consumable { --Boombox
     key = 'boombox',
     loc_txt = {
         name = 'Boombox',
-        text = {'Reduce {C:attention}Reroll{} cost by {C:money}$#3#{}',
+        text = {'{C:green}#4# in 2{} chance to',
+        'reduce {C:attention}Reroll{} cost by {C:money}$#3#{}',
         'for the {C:attention}rest of this shop{}',
         '{C:money}#2#/#1# uses left{}'}
     },
     set = 'Gear',
     pos = {x = 6,y = 0}, 
     atlas = 'gearatlas', 
-    config = {extra = {maxuses = 5, currentuses = 5, rerollreduce = 2}},
+    config = {extra = {maxuses = 5, currentuses = 5, rerollreduce = 2,}},
     discovered = true,
     cost = 6,
     loc_vars = function(self, info_queue, card)
-        return {vars = {card.ability.extra.maxuses,card.ability.extra.currentuses,card.ability.extra.rerollreduce}}
+        return {vars = {card.ability.extra.maxuses,card.ability.extra.currentuses,card.ability.extra.rerollreduce,G.GAME.probabilities.normal}}
     end,
     keep_on_use = function(self,card)
         if card.ability.extra.currentuses > 1 then
@@ -765,9 +851,9 @@ SMODS.Consumable { --Boombox
     use = function(self,card,area,copier)
         if pseudorandom('boombox') < G.GAME.probabilities.normal/2 then
             if G.GAME.round_resets.temp_reroll_cost then
-                G.GAME.round_resets.temp_reroll_cost = math.max(0, G.GAME.round_resets.temp_reroll_cost - card.ability.extra.rerollreduce)
+                G.GAME.round_resets.temp_reroll_cost = math.max(G.GAME.round_resets.temp_reroll_cost - G.GAME.current_round.reroll_cost, G.GAME.round_resets.temp_reroll_cost - card.ability.extra.rerollreduce)
             else
-                G.GAME.round_resets.temp_reroll_cost = math.max(0, G.GAME.round_resets.reroll_cost - card.ability.extra.rerollreduce)
+                G.GAME.round_resets.temp_reroll_cost = math.max(G.GAME.round_resets.reroll_cost - G.GAME.current_round.reroll_cost, G.GAME.round_resets.reroll_cost - card.ability.extra.rerollreduce)
             end
             G.E_MANAGER:add_event(Event({func = function()
                 calculate_reroll_cost(true)
@@ -787,7 +873,7 @@ SMODS.Consumable { --Boombox
         else
             G.E_MANAGER:add_event(Event({func = function()
                 attention_text({
-                    text = 'Nope!',
+                    text = 'Sad :(',
                     scale = 1.3, 
                     hold = 1.4,
                     major = card,
@@ -858,6 +944,97 @@ SMODS.Consumable { --Paintball Gun
                 delay (0.5)
             end
         end
+        card.ability.extra.currentuses = card.ability.extra.currentuses - 1
+    end
+}
+
+SMODS.Consumable { --Gravity Coil
+    key = 'gravitycoil',
+    loc_txt = {
+        name = 'Gravity Coil',
+        text = {'If selected hand is a {C:attention}Straight{},',
+        '{C:attention}Full House{}, or a {C:attention}Five of a Kind{},',
+        'make all cards {C:attention}Wild Cards{}',
+        '{C:money}#2#/#1# uses left{}'}
+    },
+    set = 'Gear',
+    pos = {x = 0,y = 1}, 
+    atlas = 'gearatlas', 
+    config = {extra = {maxuses = 2, currentuses = 2}},
+    discovered = true,
+    cost = 6,
+    loc_vars = function(self, info_queue, card)
+        return {vars = {card.ability.extra.maxuses,card.ability.extra.currentuses}}
+    end,
+    keep_on_use = function(self,card)
+        if card.ability.extra.currentuses > 1 then
+            return true
+        end
+    end,
+    can_use = function(self,card)
+        if card.ability.extra.currentuses > 0 then
+            if G.STATE == G.STATES.SELECTING_HAND or G.STATE == G.STATES.TAROT_PACK or G.STATE == G.STATES.SPECTRAL_PACK or G.STATE == G.STATES.PLANET_PACK then
+                if G.hand.highlighted then
+                    if G.FUNCS.get_poker_hand_info(G.hand.highlighted) == 'Straight' or G.FUNCS.get_poker_hand_info(G.hand.highlighted) == 'Full House' or G.FUNCS.get_poker_hand_info(G.hand.highlighted) == 'Five of a Kind' then
+                        return true
+                    end
+                end
+            end
+        end
+    end,
+    use = function(self,card,area,copier)
+        for i, v in pairs (G.hand.highlighted) do
+            G.E_MANAGER:add_event(Event({
+                func = function()
+                    v:set_ability(G.P_CENTERS.m_wild)
+                    v:juice_up(0.3, 0.4)
+                    play_sound('tarot1')
+                    return true
+                end
+            }))
+            delay(0.5)
+        end
+        card.ability.extra.currentuses = card.ability.extra.currentuses - 1
+    end
+}
+
+SMODS.Consumable { --Speed Coil
+    key = 'speedcoil',
+    loc_txt = {
+        name = 'Speed Coil',
+        text = {'Get a random {C:attention}Tag{}',
+        '{C:money}#2#/#1# uses left{}'}
+    },
+    set = 'Gear',
+    pos = {x = 1,y = 1}, 
+    atlas = 'gearatlas', 
+    config = {extra = {maxuses = 4, currentuses = 4}},
+    discovered = true,
+    cost = 6,
+    loc_vars = function(self, info_queue, card)
+        return {vars = {card.ability.extra.maxuses,card.ability.extra.currentuses}}
+    end,
+    keep_on_use = function(self,card)
+        if card.ability.extra.currentuses > 1 then
+            return true
+        end
+    end,
+    can_use = function(self,card)
+        if card.ability.extra.currentuses > 0 then
+            if card.area ~= G.shop_jokers then
+                return true
+            end
+        end
+    end,
+    use = function(self,card,area,copier)
+        G.E_MANAGER:add_event(Event({
+            func = (function()
+                add_tag(Tag(get_next_tag_key()))
+                play_sound('generic1', 0.9 + math.random()*0.1, 0.8)
+                play_sound('holo1', 1.2 + math.random()*0.1, 0.4)
+                return true
+            end)
+        }))
         card.ability.extra.currentuses = card.ability.extra.currentuses - 1
     end
 }
