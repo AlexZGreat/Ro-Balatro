@@ -9,6 +9,7 @@
 --- PREFIX: robl
 --- VERSION: 1.0.0
 --- LOADER_VERSION_GEQ: 1.0.0
+--- CONFLICTS: [Cryptid]
 
 SMODS.Atlas{
     key = "modicon",
@@ -41,7 +42,8 @@ SMODS.ConsumableType { --Gear Consumable Type
         name = 'Gear',
         label = 'Gear'
     },
-    shop_rate = 5
+    shop_rate = 5,
+    default = 'c_robl_sword'
 }
 
 SMODS.Joker {  --Noob
@@ -384,7 +386,7 @@ SMODS.Joker { --Swordsman
     },
     config = {extra = {xmult = 1, xmultgain = 0.1, xmultloss = 0.25}},
     rarity = 3,
-    pos = {x = 7,y = 3},
+    pos = {x = 0,y = 1},
     atlas = 'jokeratlas',
     cost = 5,
     unlocked = true,
@@ -428,7 +430,7 @@ SMODS.Joker { --Adopt Me
     },
     config = {extra = {xmult = 0.5, money = 8}},
     rarity = 2,
-    pos = {x = 7,y = 3},
+    pos = {x = 1,y = 1},
     atlas = 'jokeratlas',
     cost = 5,
     unlocked = true,
@@ -438,23 +440,17 @@ SMODS.Joker { --Adopt Me
         return {vars = {card.ability.extra.xmult, card.ability.extra.money}}
     end,
     calculate = function(self,card,context)
-        if context.end_of_round then
-            if not context.individual and not context.repetition then
-                ease_dollars(card.ability.extra.money)
-                return {
-                    message = localize('$')..card.ability.extra.money,
-                    colour = G.C.MONEY,
-                    card = card
-                }
-            end
-        end
         if context.joker_main then
             return {
                 message = localize{type='variable',key='a_xmult',vars={card.ability.extra.xmult}},
                 Xmult_mod = card.ability.extra.xmult
             }
         end
-    end
+    end,
+    calc_dollar_bonus = function(self)
+		local bonus = self.ability.extra.money
+        if bonus > 0 then return bonus end
+	end
 }
 
 SMODS.Consumable { --Sword
