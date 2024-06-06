@@ -34,7 +34,7 @@ SMODS.Atlas {
 
 SMODS.ConsumableType { --Gear Consumable Type
     key = 'Gear',
-    collection_rows = { 5,5 },
+    collection_rows = { 4,3 },
     primary_colour = G.C.CHIPS,
     secondary_colour = G.C.MONEY,
     loc_txt = {
@@ -42,7 +42,7 @@ SMODS.ConsumableType { --Gear Consumable Type
         name = 'Gear',
         label = 'Gear'
     },
-    shop_rate = 5,
+    shop_rate = 3,
     default = 'c_robl_sword'
 }
 
@@ -1031,6 +1031,274 @@ SMODS.Consumable { --Speed Coil
                 return true
             end)
         }))
+        card.ability.extra.currentuses = card.ability.extra.currentuses - 1
+    end
+}
+
+SMODS.Consumable { --Ban Hammer
+    key = 'banhammer',
+    loc_txt = {
+        name = 'Ban Hammer',
+        text = {'{C:attention}Destroy the {C:attention}leftmost{}',
+        'Joker and apply an {C:dark_edition}Edition{}',
+        'to a random Joker',
+        '{C:money}#2#/#1# uses left{}'}
+    },
+    set = 'Gear',
+    pos = {x = 2,y = 1}, 
+    atlas = 'gearatlas', 
+    config = {extra = {maxuses = 3, currentuses = 3, eligible_editionless_jokers = {}}},
+    discovered = true,
+    cost = 6,
+    loc_vars = function(self, info_queue, card)
+        return {vars = {card.ability.extra.maxuses,card.ability.extra.currentuses}}
+    end,
+    keep_on_use = function(self,card)
+        if card.ability.extra.currentuses > 1 then
+            return true
+        end
+    end,
+    can_use = function(self,card)
+        if card.ability.extra.currentuses > 0 then
+            if card.area ~= G.shop_jokers then
+                if #card.ability.extra.eligible_editionless_jokers > 0 and not G.jokers.cards[1].ability.eternal then 
+                    return true
+                end
+            end
+        end
+    end,
+    use = function(self,card,area,copier)
+        G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.4, func = function()
+            G.jokers.cards[1]:start_dissolve({G.C.RED}, nil, 1.6)
+            edition = poll_edition('banhammer', nil, false, true)
+            pseudorandom_element(card.ability.extra.eligible_editionless_jokers,pseudoseed('banhammer_joker')):set_edition(edition, true)
+            card:juice_up(0.3, 0.5)
+            return true end }))
+        card.ability.extra.currentuses = card.ability.extra.currentuses - 1
+    end,
+    update = function(self,card,dt)
+        card.ability.extra.eligible_editionless_jokers = EMPTY(card.ability.extra.eligible_editionless_jokers)
+        if G.STAGE == G.STAGES.RUN then
+            for i, v in ipairs(G.jokers.cards) do
+                if v.ability.set == 'Joker' and (not v.edition) and v ~= G.jokers.cards[1] then
+                    table.insert(card.ability.extra.eligible_editionless_jokers, v)
+                end
+            end
+        end
+    end
+}
+
+SMODS.Consumable { --Zombie Staff
+    key = 'zombiestaff',
+    loc_txt = {
+        name = 'Zombie Staff',
+        text = {'Create a random {C:dark_edition}Negative',
+        '{C:attention}Common Joker{} or {C:purple}Tarot{} Card',
+        '{C:money}#2#/#1# uses left{}'}
+    },
+    set = 'Gear',
+    pos = {x = 3,y = 1}, 
+    atlas = 'gearatlas', 
+    config = {extra = {maxuses = 3, currentuses = 3}},
+    discovered = true,
+    cost = 6,
+    loc_vars = function(self, info_queue, card)
+        return {vars = {card.ability.extra.maxuses,card.ability.extra.currentuses}}
+    end,
+    keep_on_use = function(self,card)
+        if card.ability.extra.currentuses > 1 then
+            return true
+        end
+    end,
+    can_use = function(self,card)
+        if card.ability.extra.currentuses > 0 then
+            if card.area ~= G.shop_jokers then
+                return true
+            end
+        end
+    end,
+    use = function(self,card,area,copier)
+        local isjoker = pseudorandom(pseudoseed('zombiestaff'))
+        if isjoker > 0.5 then
+            G.GAME.joker_buffer = G.GAME.joker_buffer + 1
+            G.E_MANAGER:add_event(Event({
+                func = function() 
+                    local _card = create_card('Joker', G.jokers, nil, 0, nil, nil, nil, 'zombiestaff_jokers')
+                    _card:add_to_deck()
+                    G.jokers:emplace(_card)
+                    _card:start_materialize()
+                    G.GAME.joker_buffer = 0
+                    _card:set_edition({negative = true},true)
+                    card:juice_up(0.5,0.5)
+                    return true
+                end}))   
+        else
+            G.GAME.consumeable_buffer = G.GAME.consumeable_buffer + 1
+            G.E_MANAGER:add_event(Event({
+                func = function() 
+                    local _card = create_card('Tarot',G.consumeables, nil, nil, nil, nil, nil, 'car')
+                    _card:add_to_deck()
+                    G.consumeables:emplace(_card)
+                    G.GAME.consumeable_buffer = 0
+                    _card:set_edition({negative = true},true)
+                    card:juice_up(0.5,0.5)
+                    return true
+                end}))   
+        end
+        card.ability.extra.currentuses = card.ability.extra.currentuses - 1
+    end
+}
+
+SMODS.Consumable { --Rocket Launcher
+    key = 'rocketlauncher',
+    loc_txt = {
+        name = 'Rocket Launcher',
+        text = {'{C:attention}Destroy{} 1 selected card and either',
+        'all cards of the same {C:attention}rank{} or',
+        '{C:attention}suit{} in hand, chosen {C:attention}randomly',
+        '{C:money}#2#/#1# uses left{}'}
+    },
+    set = 'Gear',
+    pos = {x = 4,y = 1}, 
+    atlas = 'gearatlas', 
+    config = {extra = {maxuses = 4, currentuses = 4}},
+    discovered = true,
+    cost = 6,
+    loc_vars = function(self, info_queue, card)
+        return {vars = {card.ability.extra.maxuses,card.ability.extra.currentuses}}
+    end,
+    keep_on_use = function(self,card)
+        if card.ability.extra.currentuses > 1 then
+            return true
+        end
+    end,
+    can_use = function(self,card)
+        if card.ability.extra.currentuses > 0 then
+            if G.STATE == G.STATES.SELECTING_HAND or G.STATE == G.STATES.TAROT_PACK or G.STATE == G.STATES.SPECTRAL_PACK or G.STATE == G.STATES.PLANET_PACK then
+                if #G.hand.highlighted and #G.hand.highlighted == 1 then
+                    return true
+                end
+            end
+        end
+    end,
+    use = function(self,card,area,copier)
+        local isrank = pseudorandom(pseudoseed('rocketlauncher'))
+        local destroyedcards = {}
+        if isrank > 0.5 then
+            for i, v in pairs (G.hand.cards) do
+                if v.base.suit == G.hand.highlighted[1].base.suit then
+                    if destroyedcards then
+                        destroyedcards[#destroyedcards+1] = v
+                    else
+                        destroyedcard[1] = v
+                    end
+                end
+            end
+        else
+            for i, v in pairs (G.hand.cards) do
+                if v.base.id == G.hand.highlighted[1].base.id then
+                    if destroyedcards then
+                        destroyedcards[#destroyedcards+1] = v
+                    else
+                        destroyedcard[1] = v
+                    end
+                end
+            end
+        end
+        G.E_MANAGER:add_event(Event({
+            trigger = 'after',
+            delay = 0.2,
+            func = function() 
+                for i, v in pairs (destroyedcards) do
+                    if v.ability.name == 'Glass Card' then 
+                        v:shatter()
+                    else
+                        v:start_dissolve(nil, i == 1)
+                    end
+                end
+                return true end }))
+        card.ability.extra.currentuses = card.ability.extra.currentuses - 1
+    end
+}
+
+SMODS.Consumable { --Bomb
+    key = 'bomb',
+    loc_txt = {
+        name = 'Bomb',
+        text = {'{C:attention}Remove{} all levels and randomly',
+        'gain 1 {C:red}Discard{}, {C:blue}Hand{}, or {C:attention}Hand',
+        '{C:attention}Size{} per {C:attention}5{} levels removed',
+        '{C:money}#2#/#1# uses left{}'}
+    },
+    set = 'Gear',
+    pos = {x = 5,y = 1}, 
+    atlas = 'gearatlas', 
+    config = {extra = {maxuses = 2, currentuses = 2}},
+    discovered = true,
+    cost = 6,
+    loc_vars = function(self, info_queue, card)
+        return {vars = {card.ability.extra.maxuses,card.ability.extra.currentuses}}
+    end,
+    keep_on_use = function(self,card)
+        if card.ability.extra.currentuses > 1 then
+            return true
+        end
+    end,
+    can_use = function(self,card)
+        if card.ability.extra.currentuses > 0 then
+            if card.area ~= G.shop_jokers then
+                return true
+            end
+        end
+    end,
+    use = function(self,card,area,copier)
+        local _planet, _hand, _tally = nil, nil, -1 -- was yoinked from the cryptid white hole code
+        for k, v in ipairs(G.handlist) do
+            if G.GAME.hands[v].visible and G.GAME.hands[v].played > _tally then
+                _hand = v
+                _tally = G.GAME.hands[v].played
+            end
+        end
+        if _hand then
+            for k, v in pairs(G.P_CENTER_POOLS.Planet) do
+                if v.config.hand_type == _hand then
+                    _planet = v.key
+                end
+            end
+        end
+        local removed_levels = 0
+        for k, v in ipairs(G.handlist) do
+            if G.GAME.hands[v].level > 1 then
+                local this_removed_levels = G.GAME.hands[v].level - 1
+                removed_levels = removed_levels + this_removed_levels
+                level_up_hand(card, v, true, -this_removed_levels)
+            end
+        end -- end of yoinking
+        while removed_levels >= 5 do
+            local resource = pseudorandom(pseudoseed('bomb'))
+            if resource > .66 then
+                G.GAME.round_resets.discards = G.GAME.round_resets.discards + 1
+                ease_discard(1)
+            elseif resource > .33 then 
+                G.GAME.round_resets.hands = G.GAME.round_resets.hands + 1
+                ease_hands_played(1)
+            else
+                G.hand:change_size(1)
+                G.E_MANAGER:add_event(Event({
+                    func = function() 
+                        play_sound('tarot1')
+                        play_sound('tarot2')
+                        return true
+                    end})) 
+            end
+            removed_levels = removed_levels - 5
+            G.E_MANAGER:add_event(Event({
+                func = function() 
+                    card:juice_up(0.5,0.5)
+                    return true
+                end}))   
+            delay(1)
+        end
         card.ability.extra.currentuses = card.ability.extra.currentuses - 1
     end
 }
