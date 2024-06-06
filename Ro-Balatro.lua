@@ -9,7 +9,6 @@
 --- PREFIX: robl
 --- VERSION: 1.0.0
 --- LOADER_VERSION_GEQ: 1.0.0
---- CONFLICTS: [Cryptid]
 
 SMODS.Atlas{
     key = "modicon",
