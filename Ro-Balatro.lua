@@ -7,8 +7,23 @@
 --- PRIORITY: -100
 --- BADGE_COLOR: ff0000
 --- PREFIX: robl
---- VERSION: 1.0.0
+--- VERSION: 1.2.1
 --- LOADER_VERSION_GEQ: 1.0.0
+
+register_sound('SwordSwing', SMODS.current_mod.path, 'SwordSwing.mp3')
+register_sound('SwordLunge', SMODS.current_mod.path, 'SwordLunge.mp3')
+register_sound('RobloxBass', SMODS.current_mod.path, 'RobloxBass.ogg')
+register_sound('BloxyCola', SMODS.current_mod.path, 'BloxyCola.mp3')
+register_sound('RobloxButton', SMODS.current_mod.path, 'RobloxButton.mp3')
+register_sound('RobloxGravityCoil', SMODS.current_mod.path, 'RobloxGravityCoil.mp3')
+register_sound('RobloxSpeedCoil', SMODS.current_mod.path, 'RobloxSpeedCoil.mp3')
+register_sound('RobloxRocketShot', SMODS.current_mod.path, 'RobloxRocketShot.ogg')
+register_sound('RobloxSlingshot', SMODS.current_mod.path, 'RobloxSlingshot.ogg')
+register_sound('RobloxSuperball', SMODS.current_mod.path, 'RobloxSuperball.ogg')
+register_sound('RainingTacos', SMODS.current_mod.path, 'RainingTacos.wav')
+register_sound('PaintballGun', SMODS.current_mod.path, 'PaintballGun.ogg')
+register_sound('ZombieGroan', SMODS.current_mod.path, 'ZombieGroan.wav')
+register_sound('RobloxBanHammer', SMODS.current_mod.path, 'RobloxBanHammer.mp3')
 
 SMODS.Atlas{
     key = "modicon",
@@ -159,9 +174,10 @@ SMODS.Joker { --Banland
         name = 'Banland',
         text = {'When sold, {C:attention}destroy{} every {C:attention}consumable{}',
         'in your consumable area',
-        'Gain {C:money}$#1#{} per consumable destroyed'}
+        'Gain {C:money}$#1#{} per consumable destroyed',
+        '{C:inactive}Will give {C:money}$#2#'}
     },
-    config = {extra = {dollars = 7}},
+    config = {extra = {dollars = 7, willgive = 0}},
     rarity = 1,
     pos = {x = 6,y = 0},
     atlas = 'jokeratlas',
@@ -169,8 +185,9 @@ SMODS.Joker { --Banland
     unlocked = true,
     discovered = true,
     blueprint_compat = false,
+    eternal_compat = false,
     loc_vars = function(self, info_queue, card)
-        return {vars = {card.ability.extra.dollars}}
+        return {vars = {card.ability.extra.dollars, card.ability.extra.willgive}}
     end,
     calculate = function(self,card,context)
         if context.selling_self then
@@ -188,15 +205,20 @@ SMODS.Joker { --Banland
                 delay(0.5)
             end
             if amount > 0 then
-                ease_dollars(card.ability.extra.dollars*amount)
-                G.GAME.dollar_buffer = (G.GAME.dollar_buffer or 0) + card.ability.extra.dollars*amount
-                G.E_MANAGER:add_event(Event({func = (function() G.GAME.dollar_buffer = 0; return true end)}))
-                return {
-                    message = localize('$')..card.ability.extra.dollars*amount,
-                    dollars = card.ability.extra.dollars*amount,
-                    colour = G.C.MONEY
-                }
+                G.E_MANAGER:add_event(Event({func = function()
+                    ease_dollars(card.ability.extra.dollars*amount)
+                return true end }))
             end
+        end
+    end,
+    update = function(self,card,dt)
+        card.ability.extra.willgive = 0
+        if G.STAGE == G.STAGES.RUN then
+            local amount = 0
+            for i, v in pairs (G.consumeables.cards) do
+                amount = amount + 1
+            end
+            card.ability.extra.willgive = card.ability.extra.dollars * amount
         end
     end
 }
@@ -206,9 +228,10 @@ SMODS.Joker { --Egg Hunt
     loc_txt = {
         name = 'Egg Hunt',
         text = {'{C:mult}+#1#{} Mult if full deck',
-        'contains {C:attention}52 unique cards{}'}
+        'contains {C:attention}52 unique cards{}',
+        '{C:inactive}[#2#]'}
     },
-    config = {extra = {mult = 15}},
+    config = {extra = {mult = 15, active = 'Inactive'}},
     rarity = 1,
     pos = {x = 3,y = 0},
     atlas = 'jokeratlas',
@@ -217,10 +240,21 @@ SMODS.Joker { --Egg Hunt
     discovered = true,
     blueprint_compat = true,
     loc_vars = function(self, info_queue, card)
-        return {vars = {card.ability.extra.mult}}
+        return {vars = {card.ability.extra.mult,card.ability.extra.active}}
     end,
     calculate = function(self,card,context)
         if context.joker_main then
+            if card.ability.extra.active == 'Active' then
+                return {
+                    message = localize{type='variable',key='a_mult',vars={card.ability.extra.mult}},
+                    mult_mod = card.ability.extra.mult
+                }
+            end
+        end
+    end,
+    update = function(self,card,dt)
+        card.ability.extra.active = 'Inactive'
+        if G.STAGE == G.STAGES.RUN then
             local uniquecards = {}
             for i, v in pairs (G.playing_cards) do
                 local isunique = true
@@ -236,10 +270,7 @@ SMODS.Joker { --Egg Hunt
                 end
             end
             if #uniquecards >= 52 then
-                return {
-                    message = localize{type='variable',key='a_mult',vars={card.ability.extra.mult}},
-                    mult_mod = card.ability.extra.mult
-                }
+                card.ability.extra.active = 'Active'
             end
         end
     end
@@ -301,9 +332,10 @@ SMODS.Joker {  --Bacon Hair
     key = 'baconhair',
     loc_txt = {
         name = 'Bacon Hair',
-        text = {'{C:chips}+#1#{} Chips, {C:chips}+#2#{} additional',
+        text = {'{C:chips}+#2#{} Chips, {C:chips}+#3#{} additional',
             'Chips for each {C:attention}consumable{} in',
-            'your consumable area'}
+            'your consumable area',
+            '{C:inactive}Currently {C:chips}+#1#{C:inactive} Chips'}
     },
     config = {extra = {chips = 40, freechips = 40, gainedchips = 40}},
     rarity = 1,
@@ -314,7 +346,7 @@ SMODS.Joker {  --Bacon Hair
     discovered = true,
     blueprint_compat = true,
     loc_vars = function(self, info_queue, card)
-        return {vars = {card.ability.extra.freechips,card.ability.extra.gainedchips}}
+        return {vars = {card.ability.extra.chips,card.ability.extra.freechips,card.ability.extra.gainedchips}}
     end,
     calculate = function(self,card,context)
         if context.joker_main then
@@ -328,6 +360,16 @@ SMODS.Joker {  --Bacon Hair
                 chip_mod = card.ability.extra.chips,
                 colour = G.C.CHIPS
             }
+        end
+    end,
+    update = function(self,card,dt)
+        card.ability.extra.chips = card.ability.extra.freechips
+        if G.STAGE == G.STAGES.RUN then
+            local amount = 0
+            for i, v in pairs (G.consumeables.cards) do
+                amount = amount + 1
+            end
+            card.ability.extra.chips = card.ability.extra.freechips + card.ability.extra.gainedchips * amount
         end
     end
 }
@@ -505,6 +547,7 @@ SMODS.Consumable { --Sword
                                 card:start_dissolve(nil, i == #G.hand.highlighted)
                             end
                         end
+                        Custom_Play_Sound('SwordSwing',false, 1, 1)
                         return true end }))
             else
                 G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.4, func = function()
@@ -519,8 +562,8 @@ SMODS.Consumable { --Sword
                         silent = true
                         })
                         G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.06*G.SETTINGS.GAMESPEED, blockable = false, blocking = false, func = function()
-                            play_sound('tarot2', 0.76, 0.4);return true end}))
-                        play_sound('tarot2', 1, 0.4)
+                            Custom_Play_Sound('SwordSwing',false, 1, 0.5);return true end}))
+                            Custom_Play_Sound('SwordSwing',false, 1, 1.5)
                         card:juice_up(0.3, 0.5)
                 return true end }))
             end
@@ -536,6 +579,7 @@ SMODS.Consumable { --Sword
             G.E_MANAGER:add_event(Event({
                 func = function()
                     _card:start_materialize()
+                    Custom_Play_Sound('SwordLunge',false, 1, 1)
                     return true
                 end
                     }))
@@ -578,8 +622,8 @@ SMODS.Consumable { --Trowel
     end,
     use = function(self,card,area,copier)
         local effect = pseudorandom(pseudoseed('trowel'))
-        if effect > .66 then play_sound('tarot1')
-        elseif effect > .33 then play_sound('tarot2')
+        if effect > .66 then Custom_Play_Sound('RobloxBass',false, 1, 1)
+        elseif effect > .33 then Custom_Play_Sound('RobloxBass',false, 1, 1.2)
         else play_sound('foil1', 1.2, 0.4)
         end
         for i, v in pairs (G.hand.highlighted) do
@@ -632,8 +676,8 @@ SMODS.Consumable { --Bloxy Cola
     end,
     use = function(self,card,area,copier)
         local effect = pseudorandom(pseudoseed('cola'))
-        if effect > .66 then play_sound('tarot1')
-        elseif effect > .33 then play_sound('tarot2')
+        if effect > .66 then Custom_Play_Sound('BloxyCola',false, 1, 1)
+        elseif effect > .33 then Custom_Play_Sound('BloxyCola',false, 1, 1.2)
         else play_sound('holo1', 1.2*1.58, 0.4)
         end
         for i, v in pairs (G.hand.highlighted) do
@@ -686,8 +730,8 @@ SMODS.Consumable { --Magic Carpet
     end,
     use = function(self,card,area,copier)
         local effect = pseudorandom(pseudoseed('carpet'))
-        if effect > .66 then play_sound('tarot1')
-        elseif effect > .33 then play_sound('tarot2')
+        if effect > .66 then Custom_Play_Sound('RobloxButton',false, 1, 1)
+        elseif effect > .33 then Custom_Play_Sound('RobloxButton',false, 1, 1.2)
         else play_sound('polychrome1', 1.2, 0.7)
         end
         for i, v in pairs (G.hand.highlighted) do
@@ -741,6 +785,7 @@ SMODS.Consumable { --Slingshot
             if v.visible then _poker_hands[#_poker_hands+1] = k end
         end
         card.ability.extra.pokerhand = pseudorandom_element(_poker_hands, pseudoseed('slingshot'))
+        Custom_Play_Sound('RobloxSlingshot',false, 1, 1)
         update_hand_text({sound = 'button', volume = 0.7, pitch = 0.8, delay = 0.3}, {handname=localize(card.ability.extra.pokerhand, 'poker_hands'),chips = G.GAME.hands[card.ability.extra.pokerhand].chips, mult = G.GAME.hands[card.ability.extra.pokerhand].mult, level=G.GAME.hands[card.ability.extra.pokerhand].level})
         level_up_hand(card,card.ability.extra.pokerhand,false,3)
         update_hand_text({sound = 'button', volume = 0.7, pitch = 1.1, delay = 0}, {mult = 0, chips = 0, handname = '', level = ''})
@@ -795,7 +840,7 @@ SMODS.Consumable { --Superball
                         return true
                     end
                 }))
-                play_sound('gold_seal', 1.2, 0.4)
+                Custom_Play_Sound('RobloxSuperball',false, 1, 1)
             else
                 v:set_ability(G.P_CENTERS.m_wild) 
                 G.E_MANAGER:add_event(Event({
@@ -804,7 +849,7 @@ SMODS.Consumable { --Superball
                         return true
                     end
                 }))
-                play_sound('tarot1')
+                Custom_Play_Sound('RobloxSuperball',false, 1, 1.2)
             end
         end
         card.ability.extra.currentuses = card.ability.extra.currentuses - 1
@@ -862,7 +907,7 @@ SMODS.Consumable { --Boombox
                     offset = {x = 0, y = (G.STATE == G.STATES.TAROT_PACK or G.STATE == G.STATES.SPECTRAL_PACK) and -0.2 or 0},
                     silent = true
                     })
-                play_sound('generic1', 1.2)
+                    Custom_Play_Sound('RainingTacos',true, 1, 1)
                 card:juice_up(0.3, 0.5)
             return true end }))
         else
@@ -877,7 +922,7 @@ SMODS.Consumable { --Boombox
                     offset = {x = 0, y = (G.STATE == G.STATES.TAROT_PACK or G.STATE == G.STATES.SPECTRAL_PACK) and -0.2 or 0},
                     silent = true
                     })
-                play_sound('generic1', .8)
+                    Custom_Play_Sound('RobloxBass',false, 1, 1)
                 card:juice_up(0.3, 0.5)
             return true end }))
         end
@@ -932,7 +977,7 @@ SMODS.Consumable { --Paintball Gun
                         else v:set_seal('Purple', true)
                         end
                         v:juice_up(0.3, 0.4)
-                        play_sound('tarot1')
+                        Custom_Play_Sound('PaintballGun',true, 1, 1)
                         return true
                     end
                 }))
@@ -978,12 +1023,13 @@ SMODS.Consumable { --Gravity Coil
         end
     end,
     use = function(self,card,area,copier)
+        Custom_Play_Sound('RobloxGravityCoil',false, 1, 1)
         for i, v in pairs (G.hand.highlighted) do
             G.E_MANAGER:add_event(Event({
                 func = function()
                     v:set_ability(G.P_CENTERS.m_wild)
                     v:juice_up(0.3, 0.4)
-                    play_sound('tarot1')
+                    Custom_Play_Sound('RobloxButton',true, 1, 1 + 0.1*i)
                     return true
                 end
             }))
@@ -1022,11 +1068,23 @@ SMODS.Consumable { --Speed Coil
         end
     end,
     use = function(self,card,area,copier)
+        tag = get_next_tag_key()
         G.E_MANAGER:add_event(Event({
             func = (function()
-                add_tag(Tag(get_next_tag_key()))
-                play_sound('generic1', 0.9 + math.random()*0.1, 0.8)
-                play_sound('holo1', 1.2 + math.random()*0.1, 0.4)
+                local tag = Tag(get_next_tag_key('speedcoil')) --yoinked from cyptid's pickle
+                if tag.name == 'Orbital Tag' then                 
+                    local _poker_hands = {}
+                    for k, v in pairs(G.GAME.hands) do
+                        if v.visible then _poker_hands[#_poker_hands+1] = k end
+                    end
+                    tag.ability.orbital_hand = pseudorandom_element(_poker_hands, pseudoseed('speedcoil_orbital'))
+                end
+                if tag.name == 'Boss Tag' then
+                    tag = tag_double
+                else
+                    add_tag(tag)
+                end --end of yoinking
+                Custom_Play_Sound('RobloxSpeedCoil',false, 1, 1)
                 return true
             end)
         }))
@@ -1072,6 +1130,7 @@ SMODS.Consumable { --Ban Hammer
             edition = poll_edition('banhammer', nil, false, true)
             pseudorandom_element(card.ability.extra.eligible_editionless_jokers,pseudoseed('banhammer_joker')):set_edition(edition, true)
             card:juice_up(0.3, 0.5)
+            Custom_Play_Sound('RobloxBanHammer',false, 1, 1)
             return true end }))
         card.ability.extra.currentuses = card.ability.extra.currentuses - 1
     end,
@@ -1118,7 +1177,7 @@ SMODS.Consumable { --Zombie Staff
     end,
     use = function(self,card,area,copier)
         local isjoker = pseudorandom(pseudoseed('zombiestaff'))
-        if isjoker > 0.5 then
+        if isjoker > 0.4 then
             G.GAME.joker_buffer = G.GAME.joker_buffer + 1
             G.E_MANAGER:add_event(Event({
                 func = function() 
@@ -1129,6 +1188,7 @@ SMODS.Consumable { --Zombie Staff
                     G.GAME.joker_buffer = 0
                     _card:set_edition({negative = true},true)
                     card:juice_up(0.5,0.5)
+                    Custom_Play_Sound('ZombieGroan',false, 1, 1)
                     return true
                 end}))   
         else
@@ -1141,6 +1201,7 @@ SMODS.Consumable { --Zombie Staff
                     G.GAME.consumeable_buffer = 0
                     _card:set_edition({negative = true},true)
                     card:juice_up(0.5,0.5)
+                    Custom_Play_Sound('ZombieGroan',false, 1, 1.2)
                     return true
                 end}))   
         end
@@ -1215,6 +1276,7 @@ SMODS.Consumable { --Rocket Launcher
                         v:start_dissolve(nil, i == 1)
                     end
                 end
+                Custom_Play_Sound('RobloxRocketShot',true, 1, 1)
                 return true end }))
         card.ability.extra.currentuses = card.ability.extra.currentuses - 1
     end
@@ -1273,6 +1335,26 @@ SMODS.Consumable { --Bomb
                 level_up_hand(card, v, true, -this_removed_levels)
             end
         end -- end of yoinking
+        Custom_Play_Sound('RobloxRocketShot',true, 1, 0.7)
+        delay(1)
+        if removed_levels < 5 then
+            G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.4, func = function()
+                attention_text({
+                    text = 'Lol, that was just sad.',
+                    scale = 0.7, 
+                    hold = 1.4,
+                    major = card,
+                    backdrop_colour = G.C.MONEY,
+                    align = (G.STATE == G.STATES.TAROT_PACK or G.STATE == G.STATES.SPECTRAL_PACK) and 'tm' or 'cm',
+                    offset = {x = 0, y = (G.STATE == G.STATES.TAROT_PACK or G.STATE == G.STATES.SPECTRAL_PACK) and -0.2 or 0},
+                    silent = true
+                    })
+                    G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.06*G.SETTINGS.GAMESPEED, blockable = false, blocking = false, func = function()
+                        Custom_Play_Sound('RobloxButton',true, 1, 1);return true end}))
+                    Custom_Play_Sound('RobloxButton',true, 1, 1)
+                    card:juice_up(0.3, 0.5)
+            return true end }))
+        end
         while removed_levels >= 5 do
             local resource = pseudorandom(pseudoseed('bomb'))
             if resource > .66 then
@@ -1285,8 +1367,7 @@ SMODS.Consumable { --Bomb
                 G.hand:change_size(1)
                 G.E_MANAGER:add_event(Event({
                     func = function() 
-                        play_sound('tarot1')
-                        play_sound('tarot2')
+                        Custom_Play_Sound('RobloxButton',true, 1, 1.2)
                         return true
                     end})) 
             end
