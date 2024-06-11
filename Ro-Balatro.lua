@@ -589,7 +589,7 @@ SMODS.Consumable { --Sword
                                 card:start_dissolve(nil, i == #G.hand.highlighted)
                             end
                         end
-                        play_sound('robl_SwordSwing',false, 1, 1)
+                        play_sound('robl_SwordSwing', 1, 1)
                         return true end }))
             else
                 G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.4, func = function()
@@ -604,8 +604,8 @@ SMODS.Consumable { --Sword
                         silent = true
                         })
                         G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.06*G.SETTINGS.GAMESPEED, blockable = false, blocking = false, func = function()
-                            play_sound('robl_SwordSwing',false, 1, 0.5);return true end}))
-                            play_sound('robl_SwordSwing',false, 1, 1.5)
+                            play_sound('robl_SwordSwing', 0.5, 1);return true end}))
+                            play_sound('robl_SwordSwing', 1.5, 1)
                         card:juice_up(0.3, 0.5)
                 return true end }))
             end
@@ -621,7 +621,7 @@ SMODS.Consumable { --Sword
             G.E_MANAGER:add_event(Event({
                 func = function()
                     _card:start_materialize()
-                    play_sound('robl_SwordLunge',false, 1, 1)
+                    play_sound('robl_SwordLunge', 1, 1)
                     return true
                 end
                     }))
@@ -664,8 +664,8 @@ SMODS.Consumable { --Trowel
     end,
     use = function(self,card,area,copier)
         local effect = pseudorandom(pseudoseed('trowel'))
-        if effect > .66 then play_sound('robl_RobloxBass',false, 1, 1)
-        elseif effect > .33 then play_sound('robl_RobloxBass',false, 1, 1.2)
+        if effect > .66 then play_sound('robl_RobloxBass', 1, 1)
+        elseif effect > .33 then play_sound('robl_RobloxBass', 1.2, 1)
         else play_sound('foil1', 1.2, 0.4)
         end
         for i, v in pairs (G.hand.highlighted) do
@@ -718,8 +718,8 @@ SMODS.Consumable { --Bloxy Cola
     end,
     use = function(self,card,area,copier)
         local effect = pseudorandom(pseudoseed('cola'))
-        if effect > .66 then play_sound('robl_BloxyCola',false, 1, 1)
-        elseif effect > .33 then play_sound('robl_BloxyCola',false, 1, 1.2)
+        if effect > .66 then play_sound('robl_BloxyCola', 1, 1)
+        elseif effect > .33 then play_sound('robl_BloxyCola', 1.2, 1)
         else play_sound('holo1', 1.2*1.58, 0.4)
         end
         for i, v in pairs (G.hand.highlighted) do
@@ -772,8 +772,8 @@ SMODS.Consumable { --Magic Carpet
     end,
     use = function(self,card,area,copier)
         local effect = pseudorandom(pseudoseed('carpet'))
-        if effect > .66 then play_sound('robl_RobloxButton',false, 1, 1)
-        elseif effect > .33 then play_sound('robl_RobloxButton',false, 1, 1.2)
+        if effect > .66 then play_sound('robl_RobloxButton', 1, 1)
+        elseif effect > .33 then play_sound('robl_RobloxButton', 1.2, 1)
         else play_sound('polychrome1', 1.2, 0.7)
         end
         for i, v in pairs (G.hand.highlighted) do
@@ -827,7 +827,7 @@ SMODS.Consumable { --Slingshot
             if v.visible then _poker_hands[#_poker_hands+1] = k end
         end
         card.ability.extra.pokerhand = pseudorandom_element(_poker_hands, pseudoseed('slingshot'))
-        play_sound('robl_RobloxSlingshot',false, 1, 1)
+        play_sound('robl_RobloxSlingshot', 1, 1)
         update_hand_text({sound = 'button', volume = 0.7, pitch = 0.8, delay = 0.3}, {handname=localize(card.ability.extra.pokerhand, 'poker_hands'),chips = G.GAME.hands[card.ability.extra.pokerhand].chips, mult = G.GAME.hands[card.ability.extra.pokerhand].mult, level=G.GAME.hands[card.ability.extra.pokerhand].level})
         level_up_hand(card,card.ability.extra.pokerhand,false,3)
         update_hand_text({sound = 'button', volume = 0.7, pitch = 1.1, delay = 0}, {mult = 0, chips = 0, handname = '', level = ''})
@@ -882,7 +882,7 @@ SMODS.Consumable { --Superball
                         return true
                     end
                 }))
-                play_sound('robl_RobloxSuperball',false, 1, 1)
+                play_sound('robl_RobloxSuperball', 1, 1)
             else
                 v:set_ability(G.P_CENTERS.m_wild) 
                 G.E_MANAGER:add_event(Event({
@@ -891,7 +891,7 @@ SMODS.Consumable { --Superball
                         return true
                     end
                 }))
-                play_sound('robl_RobloxSuperball',false, 1, 1.2)
+                play_sound('robl_RobloxSuperball', 1.2, 1)
             end
         end
         card.ability.extra.currentuses = card.ability.extra.currentuses - 1
@@ -949,7 +949,7 @@ SMODS.Consumable { --Boombox
                     offset = {x = 0, y = (G.STATE == G.STATES.TAROT_PACK or G.STATE == G.STATES.SPECTRAL_PACK) and -0.2 or 0},
                     silent = true
                     })
-                    play_sound('robl_RainingTacos',true, 1, 1)
+                    play_sound('robl_RainingTacos', 1, 1)
                 card:juice_up(0.3, 0.5)
             return true end }))
         else
@@ -964,7 +964,7 @@ SMODS.Consumable { --Boombox
                     offset = {x = 0, y = (G.STATE == G.STATES.TAROT_PACK or G.STATE == G.STATES.SPECTRAL_PACK) and -0.2 or 0},
                     silent = true
                     })
-                    play_sound('robl_RobloxBass',false, 1, 1)
+                    play_sound('robl_RobloxBass', 1, 1)
                 card:juice_up(0.3, 0.5)
             return true end }))
         end
@@ -1019,7 +1019,7 @@ SMODS.Consumable { --Paintball Gun
                         else v:set_seal('Purple', true)
                         end
                         v:juice_up(0.3, 0.4)
-                        play_sound('robl_PaintballGun',true, 1, 1)
+                        play_sound('robl_PaintballGun', 1, 1)
                         return true
                     end
                 }))
@@ -1065,13 +1065,13 @@ SMODS.Consumable { --Gravity Coil
         end
     end,
     use = function(self,card,area,copier)
-        play_sound('RobloxGravityCoil',false, 1, 1)
+        play_sound('robl_RobloxGravityCoil', 1, 1)
         for i, v in pairs (G.hand.highlighted) do
             G.E_MANAGER:add_event(Event({
                 func = function()
                     v:set_ability(G.P_CENTERS.m_wild)
                     v:juice_up(0.3, 0.4)
-                    play_sound('robl_RobloxButton',true, 1, 1 + 0.1*i)
+                    play_sound('robl_RobloxButton', 1 + 0.1*i, 1)
                     return true
                 end
             }))
@@ -1114,19 +1114,12 @@ SMODS.Consumable { --Speed Coil
         G.E_MANAGER:add_event(Event({
             func = (function()
                 local tag = Tag(get_next_tag_key('speedcoil')) --yoinked from cyptid's pickle
-                if tag.name == 'Orbital Tag' then                 
-                    local _poker_hands = {}
-                    for k, v in pairs(G.GAME.hands) do
-                        if v.visible then _poker_hands[#_poker_hands+1] = k end
-                    end
-                    tag.ability.orbital_hand = pseudorandom_element(_poker_hands, pseudoseed('speedcoil_orbital'))
-                end
-                if tag.name == 'Boss Tag' then
+                if tag.name == 'Boss Tag' or tag.name == 'Orbital Tag' then
                     tag = tag_double
                 else
                     add_tag(tag)
                 end --end of yoinking
-                play_sound('robl_RobloxSpeedCoil',false, 1, 1)
+                play_sound('robl_RobloxSpeedCoil', 1, 1)
                 return true
             end)
         }))
@@ -1172,7 +1165,7 @@ SMODS.Consumable { --Ban Hammer
             edition = poll_edition('banhammer', nil, false, true)
             pseudorandom_element(card.ability.extra.eligible_editionless_jokers,pseudoseed('banhammer_joker')):set_edition(edition, true)
             card:juice_up(0.3, 0.5)
-            play_sound('robl_RobloxBanHammer',false, 1, 1)
+            play_sound('robl_RobloxBanHammer', 1, 1)
             return true end }))
         card.ability.extra.currentuses = card.ability.extra.currentuses - 1
     end,
@@ -1230,7 +1223,7 @@ SMODS.Consumable { --Zombie Staff
                     G.GAME.joker_buffer = 0
                     _card:set_edition({negative = true},true)
                     card:juice_up(0.5,0.5)
-                    play_sound('robl_ZombieGroan',false, 1, 1)
+                    play_sound('robl_ZombieGroan', 1, 1)
                     return true
                 end}))   
         else
@@ -1243,7 +1236,7 @@ SMODS.Consumable { --Zombie Staff
                     G.GAME.consumeable_buffer = 0
                     _card:set_edition({negative = true},true)
                     card:juice_up(0.5,0.5)
-                    play_sound('robl_ZombieGroan',false, 1, 1.2)
+                    play_sound('robl_ZombieGroan', 1.2, 1)
                     return true
                 end}))   
         end
@@ -1318,7 +1311,7 @@ SMODS.Consumable { --Rocket Launcher
                         v:start_dissolve(nil, i == 1)
                     end
                 end
-                play_sound('robl_RobloxRocketShot',true, 1, 1)
+                play_sound('robl_RobloxRocketShot', 1, 1)
                 return true end }))
         card.ability.extra.currentuses = card.ability.extra.currentuses - 1
     end
@@ -1377,7 +1370,7 @@ SMODS.Consumable { --Bomb
                 level_up_hand(card, v, true, -this_removed_levels)
             end
         end -- end of yoinking
-        play_sound('robl_RobloxRocketShot',true, 1, 0.7)
+        play_sound('robl_RobloxRocketShot', 0.7, 1)
         delay(1)
         if removed_levels < 5 then
             G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.4, func = function()
@@ -1392,8 +1385,8 @@ SMODS.Consumable { --Bomb
                     silent = true
                     })
                     G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.06*G.SETTINGS.GAMESPEED, blockable = false, blocking = false, func = function()
-                        play_sound('robl_RobloxButton',true, 1, 1);return true end}))
-                    play_sound('robl_RobloxButton',true, 1, 1)
+                        play_sound('robl_RobloxButton', 1, 1);return true end}))
+                    play_sound('robl_RobloxButton', 1, 1)
                     card:juice_up(0.3, 0.5)
             return true end }))
         end
@@ -1409,7 +1402,7 @@ SMODS.Consumable { --Bomb
                 G.hand:change_size(1)
                 G.E_MANAGER:add_event(Event({
                     func = function() 
-                        play_sound('robl_RobloxButton',true, 1, 1.2)
+                        play_sound('robl_RobloxButton', 1.2, 1)
                         return true
                     end})) 
             end
